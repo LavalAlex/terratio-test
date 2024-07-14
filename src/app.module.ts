@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { LotsModule } from './lots/lots.module';
+import { LotsModule } from './plots/plots.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Lot } from './lots/entities/lot.entity';
-import { Side } from './lots/entities/side.entity';
+
+import { Side } from './plots/entities/side.entity';
+import { Plot } from './plots/entities/plots.entity';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { Side } from './lots/entities/side.entity';
       username: 'root',
       password: 'pr0jects-2024!',
       database: 'terratio',
-      entities: [Lot, Side],
+      entities: [Plot, Side],
       synchronize: true,
       // migrations: [
       //     "src/migration/**/*.ts"

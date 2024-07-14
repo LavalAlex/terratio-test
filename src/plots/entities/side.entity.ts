@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Lot } from './lot.entity';
+
+import { Plot } from './plots.entity';
 
 @Entity({ name: 'sides' })
 export class Side {
@@ -12,6 +13,6 @@ export class Side {
   @Column('float')
   y: number;
 
-  @ManyToOne(() => Lot, (lot) => lot.sides)
-  lot: Lot;
+  @ManyToOne(() => Plot, (plot) => plot.sides)
+  lot: Plot;
 }

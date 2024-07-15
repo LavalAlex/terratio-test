@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 import { Plot } from './plots.entity';
 
@@ -13,6 +20,18 @@ export class Side {
   @Column('float')
   y: number;
 
-  @ManyToOne(() => Plot, (plot) => plot.sides)
+  @ManyToOne(() => Plot, (plot) => plot.sides, {
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
   lot: Plot;
+
+  @CreateDateColumn()
+  creationDate!: Date;
+
+  @UpdateDateColumn()
+  lastUpdateDate!: Date;
+
+  @Column({ nullable: true })
+  removedDate: Date;
 }

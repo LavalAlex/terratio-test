@@ -11,7 +11,11 @@ export class SideRepository {
     private readonly _sideRepository: Repository<Side>,
   ) {}
 
-  async create(side: Side[]): Promise<Side[]> {
+  async create(side: Side[]) {
+    return this._sideRepository.save(side);
+  }
+
+  async update(side: Side[]) {
     return this._sideRepository.save(side);
   }
 }

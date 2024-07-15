@@ -1,24 +1,127 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
 // ** DTO's
-import { CreateLotDto } from './dto/create-plot.dto';
+import { CreatePlotDto, UpdatePlotDto } from './dto/plot.dto';
 
 // ** Repositories.
-import { LotRepository } from './repositories/plots.repository';
+import { PlotRepository } from './repositories/plots.repository';
 import { SideRepository } from './repositories/side.repository';
 
 // ** Entities.
 import { Plot } from './entities/plots.entity';
 import { Side } from './entities/side.entity';
+import { CreateSideDto } from './dto/side.dto';
 
 @Injectable()
-export class LotsService {
+export class PlotsService {
   constructor(
     private readonly _sideRepository: SideRepository,
-    private readonly _lotRepository: LotRepository,
+    private readonly _plotRepository: PlotRepository,
   ) {}
 
-  async createLote(body: CreateLotDto) {
+  private async validatePlot(id: number) {
+    const isLot = await this._plotRepository.findOneBy(id);
+
+    if (!isLot) {
+      throw new HttpException(
+        `Error, There is no plot created with id: ${id}.`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return isLot;
+  }
+
+  private consecutive(sides: CreateSideDto[]): boolean {
+    for (let i = 0; i < sides.length - 1; i++) {
+      const endPoint = sides[i].points[1];
+      const startPoint = sides[i + 1].points[0];
+
+      if (endPoint.x !== startPoint.x || endPoint.y !== startPoint.y) {
+        return false;
+      }
+    }
+
+    // Check if the last point connects back to the first point
+    const lastPoint = sides[sides.length - 1].points[1];
+    const firstPoint = sides[0].points[0];
+    if (lastPoint.x !== firstPoint.x || lastPoint.y !== firstPoint.y) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private doSidesIntersect(sides: CreateSideDto[]): boolean {
+    for (let i = 0; i < sides.length; i++) {
+      for (let j = i + 2; j < sides.length; j++) {
+        if (i === 0 && j === sides.length - 1) {
+          continue; // Ignorar la comprobación entre el primer y el último lado
+        }
+
+        const seg1Start = sides[i].points[0];
+        const seg1End = sides[i].points[1];
+        const seg2Start = sides[j].points[0];
+        const seg2End = sides[j].points[1];
+
+        if (this.doIntersect(seg1Start, seg1End, seg2Start, seg2End)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  private onSegment(
+    p: { x: number; y: number },
+    q: { x: number; y: number },
+    r: { x: number; y: number },
+  ) {
+    if (
+      q.x <= Math.max(p.x, r.x) &&
+      q.x >= Math.min(p.x, r.x) &&
+      q.y <= Math.max(p.y, r.y) &&
+      q.y >= Math.min(p.y, r.y)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  private orientation(
+    p: { x: number; y: number },
+    q: { x: number; y: number },
+    r: { x: number; y: number },
+  ) {
+    const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    if (val === 0) return 0; // colinear
+    return val > 0 ? 1 : 2; // clock or counterclock wise
+  }
+
+  private doIntersect(
+    p1: { x: number; y: number },
+    q1: { x: number; y: number },
+    p2: { x: number; y: number },
+    q2: { x: number; y: number },
+  ) {
+    const o1 = this.orientation(p1, q1, p2);
+    const o2 = this.orientation(p1, q1, q2);
+    const o3 = this.orientation(p2, q2, p1);
+    const o4 = this.orientation(p2, q2, q1);
+
+    if (o1 !== o2 && o3 !== o4) {
+      return true;
+    }
+
+    if (o1 === 0 && this.onSegment(p1, p2, q1)) return true;
+    if (o2 === 0 && this.onSegment(p1, q2, q1)) return true;
+    if (o3 === 0 && this.onSegment(p2, p1, q2)) return true;
+    if (o4 === 0 && this.onSegment(p2, q1, q2)) return true;
+
+    return false;
+  }
+
+  async createLote(body: CreatePlotDto) {
     const { sides, reference } = body;
 
     const totalSides = sides.length;
@@ -29,19 +132,32 @@ export class LotsService {
       );
     }
 
+    if (!this.consecutive(sides) || this.doSidesIntersect(sides)) {
+      throw new HttpException(
+        'Error, the points provided are not consecutive.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     let area = 0;
     const newSides: Side[] = [];
 
     for (let i = 0; i < totalSides; i++) {
-      const { x: x1, y: y1 } = sides[i];
-      const { x: x2, y: y2 } = sides[(i + 1) % totalSides];
+      const { x: x1, y: y1 } = sides[i].points[0];
+      const { x: x2, y: y2 } = sides[i].points[1];
       area += x1 * y2 - y1 * x2;
 
-      const side = {
-        x: sides[i].x,
-        y: sides[i].y,
+      const side1 = {
+        x: x1,
+        y: y1,
       } as Side;
-      newSides.push(side);
+
+      const side2 = {
+        x: x2,
+        y: y2,
+      } as Side;
+
+      newSides.push(side1, side2);
     }
 
     const newLot = {
@@ -51,22 +167,22 @@ export class LotsService {
       reference,
     } as Plot;
 
-    await this._lotRepository.create(newLot);
+    await this._plotRepository.create(newLot);
     await this._sideRepository.create(newSides);
 
     return `Total: ${newLot.total}`;
   }
 
   async findAll() {
-    return this._lotRepository.find();
+    return this._plotRepository.find();
   }
 
   async findOne(id: number) {
-    const isLot = await this._lotRepository.findOneBy(id);
+    const isLot = await this._plotRepository.findOneBy(id);
 
     if (!isLot) {
       throw new HttpException(
-        `Error, There is no lot created with id: ${id}.`,
+        `Error, There is no plot created with id: ${id}.`,
         HttpStatus.NOT_FOUND,
       );
     }
@@ -74,11 +190,76 @@ export class LotsService {
     return isLot;
   }
 
-  // update(id: number, updateLotDto: UpdateLotDto) {
-  //   return `This action updates a #${id} lot`;
-  // }
+  async update(body: UpdatePlotDto) {
+    const { id, sides, reference } = body;
 
-  remove(id: number) {
-    return `This action removes a #${id} lot`;
+    // ** Validations.
+    const isPlot = await this.validatePlot(id);
+
+    const totalSides = sides.length;
+    if (totalSides < 3) {
+      throw new HttpException(
+        'Error, you need at least 3 sides to be able to calculate the lot area.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const ids = [] as number[];
+    console.log(isPlot);
+    sides.forEach((side) => {
+      const isSide = isPlot.sides.some(({ id }) => id === side.id);
+
+      if (!isSide) {
+        throw new HttpException(
+          `Error, There is no side created with id: ${side.id}.`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const isIds = ids.some((id) => id === side.id);
+
+      if (isIds) {
+        throw new HttpException(
+          `Error, Cannot send repeated ids: ${side.id}.`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+      ids.push(side.id);
+    });
+
+    let area = 0;
+    const updateSides = [] as Side[];
+
+    for (let i = 0; i < totalSides; i++) {
+      const { x: x1, y: y1, ...sideProps } = sides[i];
+      const { x: x2, y: y2 } = sides[(i + 1) % totalSides];
+      area += x1 * y2 - y1 * x2;
+
+      const side = {
+        ...sideProps,
+        x: sides[i].x,
+        y: sides[i].y,
+      } as Side;
+      updateSides.push(side);
+    }
+
+    isPlot.total = Math.abs(area) / 2;
+
+    if (reference) {
+      isPlot.reference = reference;
+    }
+
+    await this._plotRepository.update(isPlot);
+    await this._sideRepository.update(updateSides);
+
+    return `This action updates a #${id} lot`;
+  }
+
+  async delete(id: number) {
+    await this.validatePlot(id);
+
+    await this._plotRepository.delete(id);
+
+    return `The Plot ${id} was successfully deleted.`;
   }
 }

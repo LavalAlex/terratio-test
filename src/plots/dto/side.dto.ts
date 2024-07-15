@@ -1,32 +1,22 @@
 import { IsInt, IsNumber, IsPositive } from 'class-validator';
 
-import { IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-
-class PointDto {
-  @IsInt()
-  x: number;
-
-  @IsInt()
-  y: number;
-}
-
 export class CreateSideDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => PointDto)
-  points: PointDto[];
+  @IsInt()
+  x0: number;
+
+  @IsInt()
+  y0: number;
+
+  @IsInt()
+  x1: number;
+
+  @IsInt()
+  y1: number;
 }
 
-export class UpdateSideDto {
+export class UpdateSideDto extends CreateSideDto {
   @IsNumber()
   @IsInt()
   @IsPositive()
   id: number;
-
-  @IsNumber()
-  x: number;
-
-  @IsNumber()
-  y: number;
 }

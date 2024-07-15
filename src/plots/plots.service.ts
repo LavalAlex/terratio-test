@@ -34,17 +34,19 @@ export class PlotsService {
 
   private consecutive(sides: CreateSideDto[]): boolean {
     for (let i = 0; i < sides.length - 1; i++) {
-      const endPoint = sides[i].points[1];
-      const startPoint = sides[i + 1].points[0];
+      const startPoint = { x: sides[i].x1, y: sides[i].y1 };
+      const endPoint = { x: sides[i + 1].x0, y: sides[i + 1].y0 };
 
-      if (endPoint.x !== startPoint.x || endPoint.y !== startPoint.y) {
+      if (startPoint.x !== endPoint.x || startPoint.y !== endPoint.y) {
         return false;
       }
     }
+    const lastPoint = {
+      x: sides[sides.length - 1].x1,
+      y: sides[sides.length - 1].y1,
+    };
+    const firstPoint = { x: sides[0].x0, y: sides[0].y0 };
 
-    // Check if the last point connects back to the first point
-    const lastPoint = sides[sides.length - 1].points[1];
-    const firstPoint = sides[0].points[0];
     if (lastPoint.x !== firstPoint.x || lastPoint.y !== firstPoint.y) {
       return false;
     }
@@ -52,23 +54,22 @@ export class PlotsService {
     return true;
   }
 
-  private doSidesIntersect(sides: CreateSideDto[]): boolean {
-    for (let i = 0; i < sides.length; i++) {
-      for (let j = i + 2; j < sides.length; j++) {
-        if (i === 0 && j === sides.length - 1) {
-          continue; // Ignorar la comprobación entre el primer y el último lado
-        }
+  private sidesIntersect(sides: CreateSideDto[]): boolean {
+    const n = sides.length;
+    for (let i = 0; i < n; i++) {
+      const a = { x: sides[i].x0, y: sides[i].y0 };
+      const b = { x: sides[i].x1, y: sides[i].y1 };
 
-        const seg1Start = sides[i].points[0];
-        const seg1End = sides[i].points[1];
-        const seg2Start = sides[j].points[0];
-        const seg2End = sides[j].points[1];
+      for (let j = i + 2; j < n; j++) {
+        if (i === 0 && j === n - 1) continue;
 
-        if (this.doIntersect(seg1Start, seg1End, seg2Start, seg2End)) {
-          return true;
-        }
+        const c = { x: sides[j].x0, y: sides[j].y0 };
+        const d = { x: sides[j].x1, y: sides[j].y1 };
+
+        if (this.intersect(a, b, c, d)) return true;
       }
     }
+
     return false;
   }
 
@@ -94,11 +95,11 @@ export class PlotsService {
     r: { x: number; y: number },
   ) {
     const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
-    if (val === 0) return 0; // colinear
-    return val > 0 ? 1 : 2; // clock or counterclock wise
+    if (val === 0) return 0;
+    return val > 0 ? 1 : 2;
   }
 
-  private doIntersect(
+  private intersect(
     p1: { x: number; y: number },
     q1: { x: number; y: number },
     p2: { x: number; y: number },
@@ -108,7 +109,6 @@ export class PlotsService {
     const o2 = this.orientation(p1, q1, q2);
     const o3 = this.orientation(p2, q2, p1);
     const o4 = this.orientation(p2, q2, q1);
-
     if (o1 !== o2 && o3 !== o4) {
       return true;
     }
@@ -125,6 +125,8 @@ export class PlotsService {
     const { sides, reference } = body;
 
     const totalSides = sides.length;
+
+    // ** Validations.
     if (totalSides < 3) {
       throw new HttpException(
         'Error, you need at least 3 sides to be able to calculate the lot area.',
@@ -132,9 +134,16 @@ export class PlotsService {
       );
     }
 
-    if (!this.consecutive(sides) || this.doSidesIntersect(sides)) {
+    if (!this.consecutive(sides)) {
       throw new HttpException(
         'Error, the points provided are not consecutive.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (this.sidesIntersect(sides)) {
+      throw new HttpException(
+        'Error, the points provided are colineales.',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -143,25 +152,20 @@ export class PlotsService {
     const newSides: Side[] = [];
 
     for (let i = 0; i < totalSides; i++) {
-      const { x: x1, y: y1 } = sides[i].points[0];
-      const { x: x2, y: y2 } = sides[i].points[1];
-      area += x1 * y2 - y1 * x2;
+      const { x0, y0, x1, y1 } = sides[i];
+      area += x0 * y1 - y0 * x1;
 
-      const side1 = {
-        x: x1,
-        y: y1,
+      const side = {
+        x0,
+        y0,
+        x1,
+        y1,
       } as Side;
 
-      const side2 = {
-        x: x2,
-        y: y2,
-      } as Side;
-
-      newSides.push(side1, side2);
+      newSides.push(side);
     }
 
     const newLot = {
-      userId: 1,
       total: Math.abs(area) / 2,
       sides: newSides,
       reference,
@@ -196,6 +200,7 @@ export class PlotsService {
     // ** Validations.
     const isPlot = await this.validatePlot(id);
 
+    // ** Side Validations.
     const totalSides = sides.length;
     if (totalSides < 3) {
       throw new HttpException(
@@ -204,8 +209,22 @@ export class PlotsService {
       );
     }
 
+    if (!this.consecutive(sides)) {
+      throw new HttpException(
+        'Error, the points provided are not consecutive.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (this.sidesIntersect(sides)) {
+      throw new HttpException(
+        'Error, the points provided are colineales.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const ids = [] as number[];
-    console.log(isPlot);
+
     sides.forEach((side) => {
       const isSide = isPlot.sides.some(({ id }) => id === side.id);
 
@@ -227,18 +246,20 @@ export class PlotsService {
       ids.push(side.id);
     });
 
+    // ** Update.
     let area = 0;
     const updateSides = [] as Side[];
 
     for (let i = 0; i < totalSides; i++) {
-      const { x: x1, y: y1, ...sideProps } = sides[i];
-      const { x: x2, y: y2 } = sides[(i + 1) % totalSides];
-      area += x1 * y2 - y1 * x2;
+      const { x0, y0, x1, y1, ...sideProps } = sides[i];
+      area += x0 * y1 - y0 * x1;
 
       const side = {
         ...sideProps,
-        x: sides[i].x,
-        y: sides[i].y,
+        x0,
+        y0,
+        x1,
+        y1,
       } as Side;
       updateSides.push(side);
     }
@@ -252,7 +273,7 @@ export class PlotsService {
     await this._plotRepository.update(isPlot);
     await this._sideRepository.update(updateSides);
 
-    return `This action updates a #${id} lot`;
+    return `This plot #${id} was successfully updated.`;
   }
 
   async delete(id: number) {

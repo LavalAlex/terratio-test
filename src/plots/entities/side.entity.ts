@@ -15,16 +15,22 @@ export class Side {
   id: number;
 
   @Column('float')
-  x: number;
+  x0: number;
 
   @Column('float')
-  y: number;
+  y0: number;
+
+  @Column('float')
+  x1: number;
+
+  @Column('float')
+  y1: number;
 
   @ManyToOne(() => Plot, (plot) => plot.sides, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
   })
-  lot: Plot;
+  plot: Plot;
 
   @CreateDateColumn()
   creationDate!: Date;

@@ -14,16 +14,13 @@ export class Plot {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
-  userId!: number;
-
   @Column('float')
   total: number;
 
   @Column({ nullable: true })
   reference: string;
 
-  @OneToMany(() => Side, (side) => side.lot, { cascade: true })
+  @OneToMany(() => Side, (side) => side.plot, { cascade: true })
   sides: Side[];
 
   @CreateDateColumn()

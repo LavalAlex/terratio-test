@@ -3,8 +3,10 @@ import { Module } from '@nestjs/common';
 import { LotsModule } from './plots/plots.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { Side } from './plots/entities/side.entity';
 import { Plot } from './plots/entities/plots.entity';
+import { User } from './users/entities/user.entity';
+import { Side } from './plots/entities/side.entity';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -15,7 +17,7 @@ import { Plot } from './plots/entities/plots.entity';
       username: 'root',
       password: 'pr0jects-2024!',
       database: 'terratio',
-      entities: [Plot, Side],
+      entities: [Plot, Side, User],
       synchronize: true,
       // migrations: [
       //     "src/migration/**/*.ts"
@@ -30,6 +32,7 @@ import { Plot } from './plots/entities/plots.entity';
       // }
     }),
     LotsModule,
+    UsersModule,
   ],
 })
 export class AppModule {}

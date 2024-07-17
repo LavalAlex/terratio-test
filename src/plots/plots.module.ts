@@ -7,11 +7,12 @@ import { PlotsService } from './plots.service';
 import { SideRepository } from './repositories/side.repository';
 import { PlotRepository } from './repositories/plots.repository';
 
-import { Side } from './entities/side.entity';
+import { User } from 'src/users/entities/user.entity';
 import { Plot } from './entities/plots.entity';
+import { Side } from './entities/side.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Plot, Side])],
+  imports: [TypeOrmModule.forFeature([Plot, Side, User])],
   controllers: [PlotsController],
   providers: [PlotsService, SideRepository, PlotRepository],
 })

@@ -15,8 +15,11 @@ export class PlotRepository {
     return this._plotRepository.save(Plot);
   }
 
-  async find() {
-    return this._plotRepository.find({ relations: { sides: true } });
+  async find(id: number) {
+    return this._plotRepository.find({
+      where: { user: { id } },
+      relations: { sides: true },
+    });
   }
 
   async findOneBy(id: number) {

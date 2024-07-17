@@ -9,39 +9,64 @@ import {
   Delete,
   ParseIntPipe,
   Put,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 
-import { PlotsService } from './plots.service';
 import { CreatePlotDto, UpdatePlotDto } from './dto/plot.dto';
+import { IUserCredentials } from './interface/user.interface';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { PlotsService } from './plots.service';
 
 @Controller('plots')
+@UseGuards(AuthGuard)
 export class PlotsController {
   constructor(private readonly _plotsService: PlotsService) {}
 
   @Post()
   @UsePipes(ValidationPipe)
-  create(@Body() body: CreatePlotDto) {
-    return this._plotsService.createLote(body);
+  create(@Body() body: CreatePlotDto, @Request() request: Request) {
+    const userCredentials = request[
+      'credentials'
+    ] as unknown as IUserCredentials;
+
+    return this._plotsService.createLote(userCredentials, body);
   }
 
   @Get()
-  findAll() {
-    return this._plotsService.findAll();
+  findAll(@Request() request: Request) {
+    const userCredentials = request[
+      'credentials'
+    ] as unknown as IUserCredentials;
+
+    return this._plotsService.findAll(userCredentials);
   }
 
   @Get('/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this._plotsService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @Request() request: Request) {
+    const userCredentials = request[
+      'credentials'
+    ] as unknown as IUserCredentials;
+
+    return this._plotsService.findOne(userCredentials, id);
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this._plotsService.delete(id);
+  delete(@Param('id', ParseIntPipe) id: number, @Request() request: Request) {
+    const userCredentials = request[
+      'credentials'
+    ] as unknown as IUserCredentials;
+
+    return this._plotsService.delete(userCredentials, id);
   }
 
   @Put()
   @UsePipes(ValidationPipe)
-  update(@Body() body: UpdatePlotDto) {
-    return this._plotsService.update(body);
+  update(@Body() body: UpdatePlotDto, @Request() request: Request) {
+    const userCredentials = request[
+      'credentials'
+    ] as unknown as IUserCredentials;
+
+    return this._plotsService.update(userCredentials, body);
   }
 }

@@ -7,6 +7,7 @@ import { Plot } from './plots/entities/plots.entity';
 import { User } from './users/entities/user.entity';
 import { Side } from './plots/entities/side.entity';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UsersModule } from './users/users.module';
     }),
     LotsModule,
     UsersModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

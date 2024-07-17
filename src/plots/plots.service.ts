@@ -11,13 +11,30 @@ import { SideRepository } from './repositories/side.repository';
 import { Plot } from './entities/plots.entity';
 import { Side } from './entities/side.entity';
 import { CreateSideDto } from './dto/side.dto';
+import { IUserCredentials } from './interface/user.interface';
+import { UserRepository } from 'src/users/repository/user.repository';
 
 @Injectable()
 export class PlotsService {
   constructor(
     private readonly _sideRepository: SideRepository,
     private readonly _plotRepository: PlotRepository,
+    private readonly _userRepository: UserRepository,
   ) {}
+
+  private async validateUser(userCredentials: IUserCredentials) {
+    const { email } = userCredentials;
+    const isUser = await this._userRepository.findOneBy({ email });
+
+    if (!isUser) {
+      throw new HttpException(
+        `Error, There is no user registered with this email: ${email}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return isUser;
+  }
 
   private async validatePlot(id: number) {
     const isLot = await this._plotRepository.findOneBy(id);
@@ -121,12 +138,13 @@ export class PlotsService {
     return false;
   }
 
-  async createLote(body: CreatePlotDto) {
+  async createLote(userCredentials: IUserCredentials, body: CreatePlotDto) {
     const { sides, reference } = body;
-
     const totalSides = sides.length;
 
     // ** Validations.
+    const user = await this.validateUser(userCredentials);
+
     if (totalSides < 3) {
       throw new HttpException(
         'Error, you need at least 3 sides to be able to calculate the lot area.',
@@ -169,6 +187,7 @@ export class PlotsService {
       total: Math.abs(area) / 2,
       sides: newSides,
       reference,
+      user,
     } as Plot;
 
     await this._plotRepository.create(newLot);
@@ -177,28 +196,46 @@ export class PlotsService {
     return `Total: ${newLot.total}`;
   }
 
-  async findAll() {
-    return this._plotRepository.find();
+  async findAll(userCredentials: IUserCredentials) {
+    const user = await this.validateUser(userCredentials);
+    return this._plotRepository.find(user.id);
   }
 
-  async findOne(id: number) {
-    const isLot = await this._plotRepository.findOneBy(id);
+  async findOne(userCredentials: IUserCredentials, id: number) {
+    const user = await this.validateUser(userCredentials);
+    const isPlot = await this._plotRepository.findOneBy(id);
 
-    if (!isLot) {
+    if (!isPlot) {
       throw new HttpException(
         `Error, There is no plot created with id: ${id}.`,
         HttpStatus.NOT_FOUND,
       );
     }
 
-    return isLot;
+    if (!isPlot.user || isPlot.user.id !== user.id) {
+      throw new HttpException(
+        `Error, You cannot select a plot that does not belong to you`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return isPlot;
   }
 
-  async update(body: UpdatePlotDto) {
+  async update(userCredentials: IUserCredentials, body: UpdatePlotDto) {
     const { id, sides, reference } = body;
 
     // ** Validations.
     const isPlot = await this.validatePlot(id);
+    const user = await this.validateUser(userCredentials);
+console.log(isPlot)
+console.log(user)
+    if (!isPlot.user || isPlot.user.id !== user.id) {
+      throw new HttpException(
+        'Error, Cannot update a batch that does not belong to you.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     // ** Side Validations.
     const totalSides = sides.length;
@@ -276,8 +313,17 @@ export class PlotsService {
     return `This plot #${id} was successfully updated.`;
   }
 
-  async delete(id: number) {
-    await this.validatePlot(id);
+  async delete(userCredentials: IUserCredentials, id: number) {
+    const isPlot = await this.validatePlot(id);
+
+    const user = await this.validateUser(userCredentials);
+
+    if (!isPlot.user || isPlot.user.id !== user.id) {
+      throw new HttpException(
+        'Error, Cannot delete a batch that does not belong to you.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     await this._plotRepository.delete(id);
 

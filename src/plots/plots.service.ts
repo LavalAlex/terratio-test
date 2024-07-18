@@ -1,18 +1,18 @@
+// ** Import Dependencies.
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 
-// ** DTO's
+// ** DTO's and Interface.
 import { CreatePlotDto, UpdatePlotDto } from './dto/plot.dto';
+import { IUserCredentials } from './interface/user.interface';
 
 // ** Repositories.
+import { UserRepository } from 'src/users/repository/user.repository';
 import { PlotRepository } from './repositories/plots.repository';
 import { SideRepository } from './repositories/side.repository';
 
 // ** Entities.
 import { Plot } from './entities/plots.entity';
 import { Side } from './entities/side.entity';
-
-import { IUserCredentials } from './interface/user.interface';
-import { UserRepository } from 'src/users/repository/user.repository';
 
 // ** Utils
 import { consecutive } from './utils/consecutive.util';

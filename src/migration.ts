@@ -1,8 +1,12 @@
-import { DataSource } from 'typeorm';
+// ** Import Dependecies.
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Plot } from './plots/entities/plots.entity';
-import { Side } from './plots/entities/side.entity';
+import { DataSource } from 'typeorm';
 import { join } from 'path';
+
+// ** Import entities.
+import { Plot } from './plots/entities/plots.entity';
+import { User } from './users/entities/user.entity';
+import { Side } from './plots/entities/side.entity';
 
 ConfigModule.forRoot({
   isGlobal: true,
@@ -17,8 +21,8 @@ export const AppDataSource = new DataSource({
   username: configService.get<string>('DATABASE_USERNAME'),
   password: configService.get<string>('DATABASE_PASSWORD'),
   database: configService.get<string>('DATABASE_NAME'),
-  entities: [Plot, Side],
-  synchronize: false,
+  entities: [User, Side, Plot],
+  synchronize: true,
   migrationsRun: false,
   migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
   extra: {
@@ -26,10 +30,6 @@ export const AppDataSource = new DataSource({
   },
 });
 
-AppDataSource.initialize()
-  .then(() => {
-    console.log('Data Source has been initialized!');
-  })
-  .catch((err) => {
-    console.error('Error during Data Source initialization:', err);
-  });
+AppDataSource.initialize().catch((err) => {
+  console.error('Error during Data Source initialization:', err);
+});

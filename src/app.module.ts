@@ -1,35 +1,35 @@
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
 
-import { LotsModule } from './plots/plots.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
-import { Side } from './plots/entities/side.entity';
 import { Plot } from './plots/entities/plots.entity';
+import { Side } from './plots/entities/side.entity';
+import { PlotsModule } from './plots/plots.module';
+import { join } from 'path';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: '172.17.0.2',
-      port: 3306,
-      username: 'root',
-      password: 'pr0jects-2024!',
-      database: 'terratio',
+      host: process.env.DATABASE_HOST,
+      port: process.env.DATABASE_PORT
+        ? Number(process.env.DATABASE_PORT)
+        : 3306,
+      username: process.env.DATABASE_USERNAME,
+      password: process.env.DATABASE_PASSWORD,
+      database: process.env.DATABASE_NAME,
       entities: [Plot, Side],
-      synchronize: true,
-      // migrations: [
-      //     "src/migration/**/*.ts"
-      // ],
-      // "subscribers": [
-      //     "src/subscriber/**/*.ts"
-      // ],
-      // "cli": {
-      //     "entitiesDir": "src/entity",
-      //     "migrationsDir": "src/migration",
-      //     "subscribersDir": "src/subscriber"
-      // }
+      synchronize: false,
+      migrationsRun: false,
+      migrations: [join(__dirname, '/migrations/*{.ts,.js}')],
+      extra: {
+        trustServerCertificate: true,
+      },
     }),
-    LotsModule,
+    PlotsModule,
   ],
 })
 export class AppModule {}

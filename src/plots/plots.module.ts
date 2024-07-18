@@ -15,4 +15,4 @@ import { Plot } from './entities/plots.entity';
   controllers: [PlotsController],
   providers: [PlotsService, SideRepository, PlotRepository],
 })
-export class LotsModule {}
+export class PlotsModule {}

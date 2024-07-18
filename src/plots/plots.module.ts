@@ -17,4 +17,4 @@ import { Side } from './entities/side.entity';
   controllers: [PlotsController],
   providers: [PlotsService, SideRepository, PlotRepository, UserRepository],
 })
-export class LotsModule {}
+export class PlotsModule {}

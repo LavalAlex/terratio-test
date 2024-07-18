@@ -1,14 +1,18 @@
+// ** Import Dependecies.
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
+import { join } from 'path';
 
+// ** Import Entities.
 import { Plot } from './plots/entities/plots.entity';
 import { User } from './users/entities/user.entity';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
 import { Side } from './plots/entities/side.entity';
+
+// ** Import Modules.
+import { UsersModule } from './users/users.module';
 import { PlotsModule } from './plots/plots.module';
-import { join } from 'path';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [

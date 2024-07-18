@@ -1,9 +1,6 @@
-import { DataSource, DataSourceOptions } from 'typeorm';
+// ** Import Dependencies.
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
-// import { join } from 'path';
-// import { Plot } from 'src/plots/entities/plots.entity';
-// import { Side } from 'src/plots/entities/side.entity';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 ConfigModule.forRoot({
   isGlobal: true,
@@ -30,11 +27,3 @@ export const dataSourceOptions: DataSourceOptions = {
 const dataSource = new DataSource(dataSourceOptions);
 
 export default dataSource;
-
-// AppDataSource.initialize()
-//   .then(() => {
-//     console.log('Data Source has been initialized!');
-//   })
-//   .catch((err) => {
-//     console.error('Error during Data Source initialization:', err);
-//   });

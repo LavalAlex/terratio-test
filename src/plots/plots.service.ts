@@ -67,7 +67,7 @@ export class PlotsService {
       );
     }
 
-    if (consecutive(sides)) {
+    if (!consecutive(sides)) {
       throw new HttpException(
         'Error, the points provided are not consecutive.',
         HttpStatus.BAD_REQUEST,

@@ -1,5 +1,7 @@
 import { CreateSideDto } from '../dto/side.dto';
 
+// ** Function that the segments created by the points do not intersect each other, that they are not collinear, that they do not repeat points.
+
 export const sidesIntersect = (sides: CreateSideDto[]) => {
   const n = sides.length;
   for (let i = 0; i < n; i++) {

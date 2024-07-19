@@ -1,5 +1,7 @@
 import { CreateSideDto } from '../dto/side.dto';
 
+// ** Function that validates whether the points that make up the segment are continuous with each other.
+
 export const consecutive = (sides: CreateSideDto[]) => {
   for (let i = 0; i < sides.length - 1; i++) {
     const startPoint = { x: sides[i].x1, y: sides[i].y1 };

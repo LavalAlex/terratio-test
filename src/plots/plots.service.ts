@@ -15,8 +15,8 @@ import { Plot } from './entities/plots.entity';
 import { Side } from './entities/side.entity';
 
 // ** Utils
-import { consecutive } from './utils/consecutive.util';
 import { sidesIntersect } from './utils/intersect.util';
+import { consecutive } from './utils/consecutive.util';
 
 @Injectable()
 export class PlotsService {

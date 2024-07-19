@@ -3,8 +3,10 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 
 import { UserRepository } from 'src/users/repository/user.repository';
+
 import { Plot } from 'src/plots/entities/plots.entity';
 import { User } from 'src/users/entities/user.entity';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 

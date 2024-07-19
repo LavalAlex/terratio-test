@@ -1,11 +1,15 @@
+// ** Import Dependencies.
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { Module } from '@nestjs/common';
+import { join } from 'path';
 
+// ** Import Entities.
 import { Plot } from './plots/entities/plots.entity';
 import { Side } from './plots/entities/side.entity';
+
+// ** Import Module.
 import { PlotsModule } from './plots/plots.module';
-import { join } from 'path';
 
 @Module({
   imports: [
